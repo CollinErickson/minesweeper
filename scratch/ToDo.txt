@@ -1,0 +1,23 @@
+num revealed around each square, num flagged
+
+revealedborderboxes
+
+get points of island. get boxes on border, opened/unopened.
+
+get display to update
+
+do single shore for archipelago, not all
+
+only add points to archipelago if they touch opened. Only touching flag shouldn't get added. 1 f and nothing else gives error.
+
+If lose, mark bad flags
+
+If lose, mark bomb square as red
+
+Winning isn't always correct. Double check count somewhere?
+
+Get webpage working
+
+Get AI to work when no continuous move: u f / f f, isolated u. Needs to guess.
+
+Track time spent in each part
