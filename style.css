@@ -1,0 +1,32 @@
+
+body {
+	
+	background-color:gray;/*antiquewhite;*/
+}
+
+.boardsquare {
+	text-align:center;
+	vertical-align: middle;
+	width: 44px;
+	height:44px;
+	color:black;
+}
+
+.boardsquarerevealed {
+	background-color:darkgray;
+	color:black;
+}
+
+.boardsquarenotrevealed {
+	background-color:lightgray;
+}
+
+.selectedboardsquare {
+	background-color: pink;
+}
+
+#tablemove tr td {
+	text-align:center;
+	width:60px;
+	height:60px;
+}
