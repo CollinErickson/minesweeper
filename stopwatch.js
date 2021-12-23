@@ -83,6 +83,7 @@ var Stopwatch = function(elem, options) {
   this.start  = start;
   this.stop   = stop;
   this.reset  = reset;
+  this.update = update;
 };
 
 var timer = null;

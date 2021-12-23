@@ -6,6 +6,8 @@
 	<script src="script.js"></script>
 	<script src="stopwatch.js"></script>
 	<script src="ai.js"></script>
+	<!--<script src="./dist/yasmij.js"></script>
+	<script src="https://unpkg.com/javascript-lp-solver/prod/solver.js"></script>-->
 	<!-- Favicon created with https://favicon.io/favicon-generator/ -->
 	<!--<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 	<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
@@ -51,6 +53,15 @@
 						<input type="radio" id="difficulty3"
 						 name="difficulty" value="hard" checked>
 						<label for="difficulty3">Hard</label>
+					</td></tr>
+					<tr><td>
+						<input type="button" id="buttonAIassist" value="AI assist" onclick="AImovesguaranteed()">
+					</td></tr>
+					<tr><td>
+						<input type="button" id="buttonfullAI" value="Full AI" onclick="fullAI()">
+					</td></tr>
+					<tr><td>
+						<input type="button" id="buttonAIprobs" value="Show AI probs" onclick="bestguessisland(true)">
 					</td></tr>
 				</table>
 			</div>

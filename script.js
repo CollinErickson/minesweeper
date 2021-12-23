@@ -23,7 +23,7 @@ function convert_board_to_HTML(board) {
 		out += "\t<tr>\n";
 		for (let j=0; j < ncol; j++) {
 			out += "\t\t<td class='boardsquare boardsquare" + (isrevealed[i][j] ? "revealed": "notrevealed") +
-				"' id='boardsquare"+i+j+"' style='width:25px;height:25px;border:1px solid black' onclick='square_click("+i+", "+j+", event)' oncontextmenu='mark_bomb("+i+","+j+", event);'>";
+				"' id='boardsquare"+i+"_"+j+"' style='width:25px;height:25px;border:1px solid black' onclick='square_click("+i+", "+j+", event)' oncontextmenu='mark_bomb("+i+","+j+", event);'>";
 			//out += board[i][j];
 			//console.log(i, j, isrevealed);
 			if (isrevealed[i][j]) {
@@ -35,7 +35,7 @@ function convert_board_to_HTML(board) {
 			} else if (isflagged[i][j]) {
 				out += "<div style='color:black;text-shadow: 0 0 2px black; font-size:.5em;'>" + "&#9873;" + "</div>"
 			} else {
-				out += "<div style='color:black;text-shadow: 0 0 2px black;'>" + "" + "</div>"
+				out += "<div style='color:black;text-shadow: 0 0 2px black; font-size:12px;'>" + "" + "</div>"
 			};
 			out += "</td>\n";
 		}
@@ -46,7 +46,7 @@ function convert_board_to_HTML(board) {
 }
 	
 function display_board(board) {
-	console.log("Updating board");
+	//console.log("Updating board");
 	document.getElementById("divboard").innerHTML = convert_board_to_HTML(board);
 	//window.requestAnimationFrame(function(){});
 	return;
@@ -89,7 +89,7 @@ function square_click(i, j, ev=null, dontshow=false) {
 	isrevealed[i][j] = true;
 	visualboard[i][j] = board[i][j];
 	nopened += 1;
-	square = document.getElementById("boardsquare"+i+j);
+	//let square = document.getElementById("boardsquare"+i+"_"+j);
 	
 	// Click on bomb
 	if (isbomb[i][j]) {
@@ -148,7 +148,7 @@ function reset_game() {
 	var ele = document.getElementsByName('difficulty');
 	for(i = 0; i < ele.length; i++) {
 		if(ele[i].checked) {
-		   console.log(ele[i].value);
+			//console.log(ele[i].value);
 			if (ele[i].value == "easy") {
 				ncol=10; nrow=10, nbombs=10;
 			} else if (ele[i].value == "medium") {
@@ -181,23 +181,34 @@ function reset_game() {
 			visualboard[i][j] = 'u';
 		}
 	}
+	// Debug:
+	board[0][0] = 1;
+	board[0][1] = 0;
+	board[1][0] = 0;
+	board[1][1] = 0;
+	// Set nbombs squares to have bombs.
 	let threshold = board.flat().sort()[nbombs];
 	for (let i=0; i<nrow; i++) {
 		for (let j=0; j < ncol; j++) {
 			isbomb[i][j] = board[i][j] < threshold;
 		}
 	}
+	// board contains number of bombs surrounding each square
 	for (let i=0; i<nrow; i++) {
 		for (let j=0; j < ncol; j++) {
-			board[i][j] = 0;
-			for (let di=-1; di<1.5; di++) {
-				for (let dj=-1; dj<1.5; dj++) {
-					if (!(di==0 && dj==0) && (i+di>=0) && (i+di<nrow) && (j+dj>=0) && (j+dj<ncol)) {
-						if (isbomb[i+di][j+dj]) {
-							board[i][j] = board[i][j] + 1;
+			if (isbomb[i][j]) {
+				board[i][j] = NaN;
+			} else {
+				board[i][j] = 0;
+				for (let di=-1; di<1.5; di++) {
+					for (let dj=-1; dj<1.5; dj++) {
+						if (!(di==0 && dj==0) && (i+di>=0) && (i+di<nrow) && (j+dj>=0) && (j+dj<ncol)) {
+							if (isbomb[i+di][j+dj]) {
+								board[i][j] = board[i][j] + 1;
+							}
 						}
-					}
-				}	
+					}	
+				}
 			}
 		}
 	}
@@ -224,6 +235,7 @@ function reset_game() {
 }
 
 function game_lost() {
+	timer.update();
 	timer.stop();
 	gameisactive = false;
 	
@@ -236,6 +248,7 @@ function game_lost() {
 }
 
 function game_won() {
+	timer.update();
 	timer.stop();
 	gameisactive = false;
 	
@@ -253,6 +266,12 @@ document.addEventListener('keydown', function (event) {
 	}
 	if (event.key === 'a') {
 		AImove1();
+	}
+	if (event.key === 'f') {
+		fullAI();
+	}
+	if (event.key === 'p') {
+		bestguessisland(true);
 	}
 });
 

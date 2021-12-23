@@ -1,4 +1,7 @@
 function AImove1() {
+	return AImovesguaranteed();
+}
+function AImovesguaranteed() {
 	if (!gameisactive) {return 0;}
 	let ng = AImove1guaranteed();
 	let ns = ng;
@@ -37,7 +40,7 @@ function AImove1guaranteed() {
 			}
 		}
 	}
-	console.log('nmovesmade was', nmovesmade);
+	//console.log('nmovesmade was', nmovesmade);
 	return nmovesmade;
 }
 function sum(arr) {
@@ -76,8 +79,8 @@ function mmm() {
 	
 	let reg = /121uuu/;
 }
-function bestguessisland() {
-	if (!gameisactive) {return 0;}
+function bestguessisland(show=false) {
+	if (!show) {if (!gameisactive) {return {success:false};}}
 	// Find any opened square
 	let a = null;
 	let b = null;
@@ -95,10 +98,14 @@ function bestguessisland() {
 			break;
 		}
 	}
-	let islandpoints = []; //[[a,b]];
+	if (!foundstart) {
+		console.log("bestguessisland failed to find starting point, no cells opened?");
+		return {success:false};
+	}
+	let islandpoints = [];
 	let islandbordernumberpoints = [];
 	let waterpoints = [];
-	surrounding_indices
+	
 	// Keep queue of island points
 	let pointstocheck = [[a,b]]
 	let pointsalreadyvisited = new Map();
@@ -115,16 +122,26 @@ function bestguessisland() {
 			if (visualboard[i][j] == 'u') {
 				waterpoints.push(p);
 			} else {
-				islandpoints.push(p);
+				//islandpoints.push(p);
 			}
 			// Get neighbors
 			let pneighbors = surrounding_indices(i, j);
-			// Add neighbors to points to check if p is island (not water)
-			if (visualboard[i][j] != 'u') {
+			// Add neighbors to points to check if p is island (opened num, not flag)
+			if (Number.isInteger(visualboard[i][j])) { // != 'u') {
 				for (let k=0; k<pneighbors.length; k++) {
 					pointstocheck.push(pneighbors[k]);
 				}
 			}
+			// If p is water, add opened/flagged cells it touches to points to check
+			// This makes it an archepelago, not an island
+			if (visualboard[i][j] == 'u') {
+				for (let k=0; k<pneighbors.length; k++) {
+					if (visualboard[pneighbors[k][0]][pneighbors[k][1]] != 'u') {
+						pointstocheck.push(pneighbors[k]);
+					}
+				}
+			}
+			// Store border island points that have numbers along with their neighbors.
 			if (visualboard[i][j] != 'u' && visualboard[i][j] != 'f') { // Is a numbered square
 				let numflagsleft = visualboard[i][j] - sum(pneighbors.map(x => visualboard[x[0]][x[1]] == 'f'));
 				let surroundingwaterindices = pneighbors.filter(x => visualboard[x[0]][x[1]] == 'u');
@@ -133,25 +150,29 @@ function bestguessisland() {
 				}
 			}
 			// Add to points visited
-			pointsalreadyvisited.set(p.toString(), pneighbors);
+			pointsalreadyvisited.set(p.toString(), true); //pneighbors);
 		}
 	}
 	
 	if (waterpoints.length == 0 || islandbordernumberpoints.length == 0) {
-		console.log("bad 123333");
-		//return;
+		console.log("Error in bestguessisland: no waterpoints or border points", waterpoints, islandbordernumberpoints);
+		return {success:false};
 	}
+	//console.log("islandbordernumberpoints len is", islandbordernumberpoints.length, islandbordernumberpoints);
 	
+	
+	// Estimate probabilities each waterpoint is a bomb
 	// Loop over random samples
 	let nvalid = 0;
 	let nattempts = 0;
-	let pbomb = .3;
-	let pbombvec = waterpoints.map(x => 0.3);
+	//let pbomb = .3;
+	//let pbombvec = waterpoints.map(x => 0.3);
 	let pbombmap = new Map();
 	let pbombeps0 = .05;
 	let pbombeps = pbombeps0;
+	let highestconf = 1;
 	waterpoints.forEach(x => pbombmap.set(x.toString(), 0.3));
-	while (nvalid < 10 && nattempts < 300) {
+	while (nvalid < 100 && nattempts < 1000 && (nattempts<30 || highestconf > 0.05)) {
 		//console.log("on attempt", nattempts, nvalid, pbomb);
 		nattempts += 1;
 		// Randomly assign bombs to the water
@@ -166,7 +187,7 @@ function bestguessisland() {
 		//waterpoints.forEach(x => {watermapisbomb.set(x.toString, Math.random() < pbomb)});
 		// Check if it's valid
 		let numlowexacthigh = [0,0,0];
-		// Loop over island
+		// Loop over each island border numbered point, check diff, update probs
 		for (let k=0; k<islandbordernumberpoints.length; k++) {
 			let ib = islandbordernumberpoints[k];
 			let nwaterbombs = sum(ib[2].map(x => watermapisbomb.get(x.toString())));
@@ -182,6 +203,17 @@ function bestguessisland() {
 				numlowexacthigh[1] += 1;
 			}
 		}
+		// Loop over each island border numbered point, normalize probs
+		for (let k=0; k<islandbordernumberpoints.length; k++) {
+			let ib = islandbordernumberpoints[k];
+			// Normalize probs
+			let sumprobs = 0;
+			ib[2].forEach(x => sumprobs += pbombmap.get(x.toString()));
+			if (sumprobs > 1e-8 && Math.abs(sumprobs-1)>1e-6) {// Avoid divide by zero, but shouldn't happen ever.
+				ib[2].forEach(x => pbombmap.set(x.toString(), Math.min(1,pbombmap.get(x.toString()) / (sumprobs/ib[1]))));
+				//console.log("sumprobs was:", sumprobs, "now is", sum(ib[2].map(x => pbombmap.get(x.toString()))));
+			}
+		}
 		if (numlowexacthigh[0] + numlowexacthigh[2] <= 0.5) {
 			nvalid += 1;
 		} else if (numlowexacthigh[0] > numlowexacthigh[2]) {
@@ -189,13 +221,18 @@ function bestguessisland() {
 		} else if (numlowexacthigh[0] < numlowexacthigh[2]) {
 			//pbomb -= .05;
 		}
+		highestconf = Math.min(Math.min(...Array.from(pbombmap.values())), 1-Math.max(...Array.from(pbombmap.values())));
 		pbombeps *= .99;
 	}
+	console.log("exited while loop", nvalid, nattempts, highestconf);
 	pbombmap;
+	if (show) {
+		waterpoints.forEach(x => {document.querySelector("#boardsquare"+x[0]+"_"+x[1]+" div").innerText = pbombmap.get(x.toString()).toFixed(2)});
+	}
 	
 	highestconf = 2;
-	highestconfpoint = null;
-	highestconfaction = null;
+	let highestconfpoint = null;
+	let highestconfaction = null;
 	// Loop over water points
 	for (let k=0; k<waterpoints.length; k++) {
 		let pk = pbombmap.get(waterpoints[k].toString()); 
@@ -210,10 +247,11 @@ function bestguessisland() {
 			highestconfaction = "flag";
 		}
 	}
-	console.log("Best island guess:", highestconfaction, highestconfpoint, highestconf, gameisactive);
+	console.log("Best island guess:", highestconfaction, highestconfpoint, highestconf);
 	return {action:highestconfaction,
 		   	point:highestconfpoint,
-		   	conf:highestconf
+		   	conf:highestconf,
+			success:true
 		   };
 }
 function dobestislandguess(guess) {
@@ -225,15 +263,28 @@ function dobestislandguess(guess) {
 		mark_bomb(guess.point[0], guess.point[1]);
 	} else {
 		alert("error in dobestislandguess");	
+		return 0;
 	}
+	return 1; // success, number of actions done
 }
 
 function fullAI() {
+	if (sum(isrevealed.flat()) == 0) {square_click(0,0);}
 	let nactions = 0;
-	while (nactions < 50) {
+	while (nactions < 150) {
 		nactions += 1
-		AImove1();
-		dobestislandguess(bestguessisland());
+		let n_guaranteed = AImovesguaranteed();
+		let guess = bestguessisland();
+		let n_guess = 0;
+		if (guess.success) {
+			n_guess = dobestislandguess(guess);
+		} else {
+			console.log("Full AI couldn't get bestislandguess");
+			n_guess = 0;
+		}
+		if (n_guaranteed == 0 && n_guess == 0) {
+			break;
+		}
 	}
 }
 
