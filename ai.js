@@ -79,8 +79,8 @@ function mmm() {
 	
 	let reg = /121uuu/;
 }
-function bestguessisland(show=false) {
-	if (!show) {if (!gameisactive) {return {success:false};}}
+function bestguessisland(displayprobs=false) {
+	if (!displayprobs) {if (!gameisactive) {return {success:false};}}
 	// Find any opened square
 	let a = null;
 	let b = null;
@@ -162,7 +162,7 @@ function bestguessisland(show=false) {
 	
 	
 	// Estimate probabilities each waterpoint is a bomb
-	// Loop over random samples
+	// Loop over random samples, update probabilities as you go
 	let nvalid = 0;
 	let nattempts = 0;
 	//let pbomb = .3;
@@ -226,7 +226,7 @@ function bestguessisland(show=false) {
 	}
 	console.log("exited while loop", nvalid, nattempts, highestconf);
 	pbombmap;
-	if (show) {
+	if (displayprobs) {
 		waterpoints.forEach(x => {document.querySelector("#boardsquare"+x[0]+"_"+x[1]+" div").innerText = pbombmap.get(x.toString()).toFixed(2)});
 	}
 	
@@ -274,6 +274,9 @@ function fullAI() {
 	while (nactions < 150) {
 		nactions += 1
 		let n_guaranteed = AImovesguaranteed();
+		if (!gameisactive) {
+			break;
+		}
 		let guess = bestguessisland();
 		let n_guess = 0;
 		if (guess.success) {
@@ -283,6 +286,10 @@ function fullAI() {
 			n_guess = 0;
 		}
 		if (n_guaranteed == 0 && n_guess == 0) {
+			// Find any unopened cell and open it
+			break;
+		}
+		if (!gameisactive) {
 			break;
 		}
 	}

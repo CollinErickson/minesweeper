@@ -10,14 +10,14 @@ do single shore for archipelago, not all
 
 only add points to archipelago if they touch opened. Only touching flag shouldn't get added. 1 f and nothing else gives error.
 
-If lose, mark bad flags
-
-If lose, mark bomb square as red
-
 Winning isn't always correct. Double check count somewhere?
 
-Get webpage working
-
-Get AI to work when no continuous move: u f / f f, isolated u. Needs to guess.
+Get AI to work when no continuous move: u f / f f, isolated u. Needs to guess. Or find next archipelago
 
 Track time spent in each part
+
+LP with min/max or each water cell. Obj is min xmax - xmin
+
+Add info about AI on page, keyboard shortcuts
+
+Add AI output to explain what it did

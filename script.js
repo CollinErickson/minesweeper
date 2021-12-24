@@ -23,6 +23,8 @@ function convert_board_to_HTML(board) {
 		out += "\t<tr>\n";
 		for (let j=0; j < ncol; j++) {
 			out += "\t\t<td class='boardsquare boardsquare" + (isrevealed[i][j] ? "revealed": "notrevealed") +
+				((isrevealed[i][j] && isbomb[i][j]) ? " tdrevealedbomb" : "") +
+				((!gameisactive && isflagged[i][j] && !isbomb[i][j]) ? " tdbadflag" : "") +
 				"' id='boardsquare"+i+"_"+j+"' style='width:25px;height:25px;border:1px solid black' onclick='square_click("+i+", "+j+", event)' oncontextmenu='mark_bomb("+i+","+j+", event);'>";
 			//out += board[i][j];
 			//console.log(i, j, isrevealed);
