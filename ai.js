@@ -1,7 +1,10 @@
+AIct = new CodeTimer();
+
 function AImove1() {
 	return AImovesguaranteed();
 }
 function AImovesguaranteed() {
+	AIct.start("AImovesguaranteed");
 	if (!gameisactive) {return 0;}
 	let ng = AImove1guaranteed();
 	let ns = ng;
@@ -10,6 +13,7 @@ function AImovesguaranteed() {
 		ns += ng;
 		//console.log("new ng is", ng);
 	}
+	AIct.stop("AImovesguaranteed");
 	return ns;
 }
 function AImove1guaranteed() {
@@ -81,6 +85,7 @@ function mmm() {
 }
 function bestguessisland(displayprobs=false) {
 	if (!displayprobs) {if (!gameisactive) {return {success:false};}}
+	AIct.start("bestguessisland");
 	// Find any opened square
 	let a = null;
 	let b = null;
@@ -88,9 +93,18 @@ function bestguessisland(displayprobs=false) {
 	for (let i=0; i<nrow; i++) {
 		for (let j=0; j<ncol; j++) {
 			if (Number.isInteger(visualboard[i][j])) {
-				a = i;
-				b = j;
-				foundstart = true;
+				// Make sure it has at least one unopened neighbor
+				let ijneighbs = surrounding_indices(i,j);
+				for (let k=0; k<ijneighbs.length; k++) {
+					if (visualboard[ijneighbs[k][0]][ijneighbs[k][1]] == 'u') {
+						a = i;
+						b = j;
+						foundstart = true;
+						break;
+					}
+				}
+			}
+			if (foundstart) {
 				break;
 			}
 		}
@@ -102,7 +116,7 @@ function bestguessisland(displayprobs=false) {
 		console.log("bestguessisland failed to find starting point, no cells opened?");
 		return {success:false};
 	}
-	let islandpoints = [];
+	//let islandpoints = [];
 	let islandbordernumberpoints = [];
 	let waterpoints = [];
 	
@@ -162,80 +176,96 @@ function bestguessisland(displayprobs=false) {
 	
 	
 	// Estimate probabilities each waterpoint is a bomb
-	// Loop over random samples, update probabilities as you go
-	let nvalid = 0;
-	let nattempts = 0;
-	//let pbomb = .3;
-	//let pbombvec = waterpoints.map(x => 0.3);
-	let pbombmap = new Map();
-	let pbombeps0 = .05;
-	let pbombeps = pbombeps0;
-	let highestconf = 1;
-	waterpoints.forEach(x => pbombmap.set(x.toString(), 0.3));
-	while (nvalid < 100 && nattempts < 1000 && (nattempts<30 || highestconf > 0.05)) {
-		//console.log("on attempt", nattempts, nvalid, pbomb);
-		nattempts += 1;
-		// Randomly assign bombs to the water
-		// Put them in a hashmap
-		let watermapisbomb = new Map();
-		//waterpoints.map(x => Math.random() < pbomb);
+	// Outer loop: restart same process, check stability of numbers
+	let nouter = 5;
+	let waterpoints_outerpbomb = [];
+		let pbombmap = new Map();
+	for (let iouter=0; iouter < nouter; iouter++) {
+		// Loop over random samples, update probabilities as you go
+		let nvalid = 0;
+		let nattempts = 0;
+		let pbombeps0 = .05;
+		let pbombeps = pbombeps0;
+		let highestconf = 1;
+		waterpoints.forEach(x => pbombmap.set(x.toString(), 0.3));
+		while (nvalid < 100 && nattempts < 100 && (nattempts<50 || highestconf > 0.05)) {
+			//console.log("on attempt", nattempts, nvalid, pbomb);
+			nattempts += 1;
+			// Randomly assign bombs to the water
+			// Put them in a hashmap
+			let watermapisbomb = new Map();
+			//waterpoints.map(x => Math.random() < pbomb);
+			for (let k=0; k<waterpoints.length; k++) {
+				//watermapisbomb.set(waterpoints[k].toString(), Math.random() < pbombvec[k]);
+				watermapisbomb.set(waterpoints[k].toString(), Math.random() < pbombmap.get(waterpoints[k].toString()));
+			}
+			//console.log("watermapisbomb is", watermapisbomb);
+			//waterpoints.forEach(x => {watermapisbomb.set(x.toString, Math.random() < pbomb)});
+			// Check if it's valid
+			let numlowexacthigh = [0,0,0];
+			// Loop over each island border numbered point, check diff, update probs
+			for (let k=0; k<islandbordernumberpoints.length; k++) {
+				let ib = islandbordernumberpoints[k];
+				let nwaterbombs = sum(ib[2].map(x => watermapisbomb.get(x.toString())));
+				let diff = nwaterbombs - ib[1];
+				//console.log("at point", ib[0], 'needs flags', ib[1], 'got waterbombs', nwaterbombs, 'diff is', diff);
+				if (diff>.5) { // Too many flags/bombs
+					numlowexacthigh[2] += 1;
+					ib[2].forEach(x => pbombmap.set(x.toString(), Math.max(0, pbombmap.get(x.toString()) - pbombeps)));
+				} else if (diff < -.5) { // Not enough flags/bombs
+					numlowexacthigh[0] += 1;
+					ib[2].forEach(x => pbombmap.set(x.toString(), Math.min(1, pbombmap.get(x.toString()) + pbombeps)));
+				} else { // Correct number of bombs/flags
+					numlowexacthigh[1] += 1;
+				}
+			}
+			// Loop over each island border numbered point, normalize probs
+			for (let k=0; k<islandbordernumberpoints.length; k++) {
+				let ib = islandbordernumberpoints[k];
+				// Normalize probs
+				let sumprobs = 0;
+				ib[2].forEach(x => sumprobs += pbombmap.get(x.toString()));
+				if (sumprobs > 1e-8 && Math.abs(sumprobs-1)>1e-6) {// Avoid divide by zero, but shouldn't happen ever.
+					ib[2].forEach(x => pbombmap.set(x.toString(), Math.min(1,pbombmap.get(x.toString()) / (sumprobs/ib[1]))));
+					//console.log("sumprobs was:", sumprobs, "now is", sum(ib[2].map(x => pbombmap.get(x.toString()))));
+				}
+			}
+			if (numlowexacthigh[0] + numlowexacthigh[2] <= 0.5) {
+				nvalid += 1;
+			} else if (numlowexacthigh[0] > numlowexacthigh[2]) {
+				//pbomb += .05;
+			} else if (numlowexacthigh[0] < numlowexacthigh[2]) {
+				//pbomb -= .05;
+			}
+			highestconf = Math.min(Math.min(...Array.from(pbombmap.values())), 1-Math.max(...Array.from(pbombmap.values())));
+			pbombeps *= .99;
+		}
+		console.log("exited while loop", nvalid, nattempts, highestconf);
+		if (displayprobs) {
+			waterpoints.forEach(x => {document.querySelector("#boardsquare"+x[0]+"_"+x[1]+" div").innerText = pbombmap.get(x.toString()).toFixed(2)});
+		}
+		// Store values
+		waterpoints_outerpbomb.push(Array(waterpoints.length));
 		for (let k=0; k<waterpoints.length; k++) {
-			//watermapisbomb.set(waterpoints[k].toString(), Math.random() < pbombvec[k]);
-			watermapisbomb.set(waterpoints[k].toString(), Math.random() < pbombmap.get(waterpoints[k].toString()));
+			waterpoints_outerpbomb[iouter][k] = pbombmap.get(waterpoints[k].toString());
 		}
-		//console.log("watermapisbomb is", watermapisbomb);
-		//waterpoints.forEach(x => {watermapisbomb.set(x.toString, Math.random() < pbomb)});
-		// Check if it's valid
-		let numlowexacthigh = [0,0,0];
-		// Loop over each island border numbered point, check diff, update probs
-		for (let k=0; k<islandbordernumberpoints.length; k++) {
-			let ib = islandbordernumberpoints[k];
-			let nwaterbombs = sum(ib[2].map(x => watermapisbomb.get(x.toString())));
-			let diff = nwaterbombs - ib[1];
-			//console.log("at point", ib[0], 'needs flags', ib[1], 'got waterbombs', nwaterbombs, 'diff is', diff);
-			if (diff>.5) { // Too many flags/bombs
-				numlowexacthigh[2] += 1;
-				ib[2].forEach(x => pbombmap.set(x.toString(), Math.max(0, pbombmap.get(x.toString()) - pbombeps)));
-			} else if (diff < -.5) { // Not enough flags/bombs
-				numlowexacthigh[0] += 1;
-				ib[2].forEach(x => pbombmap.set(x.toString(), Math.min(1, pbombmap.get(x.toString()) + pbombeps)));
-			} else { // Correct number of bombs/flags
-				numlowexacthigh[1] += 1;
-			}
-		}
-		// Loop over each island border numbered point, normalize probs
-		for (let k=0; k<islandbordernumberpoints.length; k++) {
-			let ib = islandbordernumberpoints[k];
-			// Normalize probs
-			let sumprobs = 0;
-			ib[2].forEach(x => sumprobs += pbombmap.get(x.toString()));
-			if (sumprobs > 1e-8 && Math.abs(sumprobs-1)>1e-6) {// Avoid divide by zero, but shouldn't happen ever.
-				ib[2].forEach(x => pbombmap.set(x.toString(), Math.min(1,pbombmap.get(x.toString()) / (sumprobs/ib[1]))));
-				//console.log("sumprobs was:", sumprobs, "now is", sum(ib[2].map(x => pbombmap.get(x.toString()))));
-			}
-		}
-		if (numlowexacthigh[0] + numlowexacthigh[2] <= 0.5) {
-			nvalid += 1;
-		} else if (numlowexacthigh[0] > numlowexacthigh[2]) {
-			//pbomb += .05;
-		} else if (numlowexacthigh[0] < numlowexacthigh[2]) {
-			//pbomb -= .05;
-		}
-		highestconf = Math.min(Math.min(...Array.from(pbombmap.values())), 1-Math.max(...Array.from(pbombmap.values())));
-		pbombeps *= .99;
 	}
-	console.log("exited while loop", nvalid, nattempts, highestconf);
-	pbombmap;
-	if (displayprobs) {
-		waterpoints.forEach(x => {document.querySelector("#boardsquare"+x[0]+"_"+x[1]+" div").innerText = pbombmap.get(x.toString()).toFixed(2)});
-	}
+	//console.log("waterpoints_outerpbomb is", waterpoints_outerpbomb);
+	let waterpoints_outerpbombavg = Array(waterpoints.length).fill(0);
+	for (let k=0; k<waterpoints.length; k++) {
+		for (let iouter=0; iouter<nouter; iouter++) {
+			waterpoints_outerpbombavg[k] += waterpoints_outerpbomb[iouter][k];
+		}
+		waterpoints_outerpbombavg[k] /= nouter;
+	 }
+	//console.log("waterpoints_outerpbombavg is", waterpoints_outerpbombavg);
 	
 	highestconf = 2;
 	let highestconfpoint = null;
 	let highestconfaction = null;
 	// Loop over water points
 	for (let k=0; k<waterpoints.length; k++) {
-		let pk = pbombmap.get(waterpoints[k].toString()); 
+		let pk = waterpoints_outerpbombavg[k]; //pbombmap.get(waterpoints[k].toString()); 
 		if (pk < highestconf) {
 			highestconf = pk;
 			highestconfpoint = waterpoints[k];
@@ -248,6 +278,7 @@ function bestguessisland(displayprobs=false) {
 		}
 	}
 	console.log("Best island guess:", highestconfaction, highestconfpoint, highestconf);
+	AIct.stop("bestguessisland");
 	return {action:highestconfaction,
 		   	point:highestconfpoint,
 		   	conf:highestconf,
@@ -268,6 +299,17 @@ function dobestislandguess(guess) {
 	return 1; // success, number of actions done
 }
 
+function openrandomcell() {
+	for (let i=0; i<nrow; i++) {
+		for (let j=0; j<ncol; j++) {
+			if (visualboard[i][j] == 'u') {
+				return square_click(i, j);
+			}
+		}
+	}
+	return 0;
+}
+
 function fullAI() {
 	if (sum(isrevealed.flat()) == 0) {square_click(0,0);}
 	let nactions = 0;
@@ -283,7 +325,7 @@ function fullAI() {
 			n_guess = dobestislandguess(guess);
 		} else {
 			console.log("Full AI couldn't get bestislandguess");
-			n_guess = 0;
+			n_guess = openrandomcell();
 		}
 		if (n_guaranteed == 0 && n_guess == 0) {
 			// Find any unopened cell and open it

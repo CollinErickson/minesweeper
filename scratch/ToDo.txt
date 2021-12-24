@@ -12,8 +12,6 @@ only add points to archipelago if they touch opened. Only touching flag shouldn'
 
 Winning isn't always correct. Double check count somewhere?
 
-Get AI to work when no continuous move: u f / f f, isolated u. Needs to guess. Or find next archipelago
-
 Track time spent in each part
 
 LP with min/max or each water cell. Obj is min xmax - xmin
@@ -21,3 +19,11 @@ LP with min/max or each water cell. Obj is min xmax - xmin
 Add info about AI on page, keyboard shortcuts
 
 Add AI output to explain what it did
+
+Pick random if no choice is better than a random untouched one
+
+Write code to play n games, tracking if won. Track time won.
+
+Don't redraw whole board? Only cells that changed
+
+Do all archipelagos at once? Makes sense if allowed to jump away when prob of bomb is high

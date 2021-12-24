@@ -29,14 +29,14 @@ function convert_board_to_HTML(board) {
 			//out += board[i][j];
 			//console.log(i, j, isrevealed);
 			if (isrevealed[i][j]) {
-				if (isbomb[i][j]) {
+				if (isbomb[i][j]) { // Is a revealed bomb (lost game)
 					out += "<div style='text-shadow: 0 0 2px black; font-size:.3em;'>" + "&#128163;" + "</div>"
 				} else { // Is a number
 					out += "<div style='text-shadow: 0 0 2px black; font-size:17px;'>" + (board[i][j] > 0 ? board[i][j] : "") + "</div>"
 				}
-			} else if (isflagged[i][j]) {
-				out += "<div style='color:black;text-shadow: 0 0 2px black; font-size:.5em;'>" + "&#9873;" + "</div>"
-			} else {
+			} else if (isflagged[i][j]) { // Flag
+				out += "<div style='color:black;text-shadow: 0 0 2px black; font-size:.4em;'>" + "&#9873;" + "</div>"
+			} else { // Unopened/unmarked
 				out += "<div style='color:black;text-shadow: 0 0 2px black; font-size:12px;'>" + "" + "</div>"
 			};
 			out += "</td>\n";
@@ -184,10 +184,10 @@ function reset_game() {
 		}
 	}
 	// Debug:
-	board[0][0] = 1;
-	board[0][1] = 0;
-	board[1][0] = 0;
-	board[1][1] = 0;
+	//board[0][0] = 1;
+	//board[0][1] = 0;
+	//board[1][0] = 0;
+	//board[1][1] = 0;
 	// Set nbombs squares to have bombs.
 	let threshold = board.flat().sort()[nbombs];
 	for (let i=0; i<nrow; i++) {
