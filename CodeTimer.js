@@ -18,6 +18,7 @@ CodeTimer.prototype.start = function(sectionname) {
 		sect = {};
 		sect.n = 0;
 		sect.totaltime = 0;
+		sect.maxtime = null;
 	}
 	if (sect.starttime != null) {
 		// Error, already running
@@ -39,9 +40,12 @@ CodeTimer.prototype.stop = function(sectionname) {
 		// Error
 		return;
 	}
-	sect.totaltime += ((new Date()) - sect.starttime) / 1000;
+	let thistime = ((new Date()) - sect.starttime) / 1000;
+	sect.totaltime += thistime;
 	sect.starttime = null;
 	sect.avgtime = sect.totaltime / sect.n;
+	sect.lasttime = thistime;
+	sect.maxtime = Math.max(sect.maxtime, thistime);
 	this.sections[sectionname] = sect;
 	return;
 }

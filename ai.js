@@ -1,22 +1,20 @@
 AIct = new CodeTimer();
 
-function AImove1() {
-	return AImovesguaranteed();
-}
 function AImovesguaranteed() {
 	AIct.start("AImovesguaranteed");
 	if (!gameisactive) {return 0;}
-	let ng = AImove1guaranteed();
+	let ng = AImovesguaranteed1iter();
 	let ns = ng;
+	// Keep repeating until there are no changes
 	while (ng > .5) {
-		ng = AImove1guaranteed();
+		ng = AImovesguaranteed1iter();
 		ns += ng;
 		//console.log("new ng is", ng);
 	}
 	AIct.stop("AImovesguaranteed");
 	return ns;
 }
-function AImove1guaranteed() {
+function AImovesguaranteed1iter(maxmoves=1e9) {
 	// use visualboard[i][j].
 	// 'f' is flagged, 'u' is unopened, number is num open
 	if (!gameisactive) {return 0;}
@@ -34,12 +32,18 @@ function AImove1guaranteed() {
 				// Only flags left to place
 				if (nunopenedsurround > 0 && nopennumberssurround + visualboard[i][j] == ncellssurround) {
 					//console.log("could place flags around", i, j);
-					si.forEach(x => {if (visualboard[x[0]][x[1]] == 'u') {nmovesmade += 1; mark_bomb(x[0], x[1])}});
+					//si.forEach(x => {if (visualboard[x[0]][x[1]] == 'u') {nmovesmade += 1; mark_bomb(x[0], x[1]); if (nmovesmade>=maxmoves) {return nmovesmade;}}});
+					for (x in si) {
+						if (visualboard[x[0]][x[1]] == 'u') {nmovesmade += 1; mark_bomb(x[0], x[1]); if (nmovesmade>=maxmoves) {return nmovesmade;}}
+					}
 				}
 				// Only cells to open
 				if (nunopenedsurround > 0 && visualboard[i][j] == nflagssurround) {
 					//console.log("could open cells around", i, j);
-					si.forEach(x => {if (visualboard[x[0]][x[1]] == 'u') {nmovesmade += 1; square_click(x[0], x[1])}});
+					//si.forEach(x => {if (visualboard[x[0]][x[1]] == 'u') {nmovesmade += 1; square_click(x[0], x[1]); if (nmovesmade>=maxmoves) {return nmovesmade;}}});
+					for (x in si) {
+						if (visualboard[x[0]][x[1]] == 'u') {nmovesmade += 1; square_click(x[0], x[1]); if (nmovesmade>=maxmoves) {return nmovesmade;}}
+					}
 				}
 			}
 		}
@@ -257,7 +261,7 @@ function bestguessisland(displayprobs=false) {
 			// Decrease step size
 			pbombeps *= .99;
 		}
-		console.log("exited while loop", nvalid, nattempts, highestconf);
+		//console.log("exited while loop", nvalid, nattempts, highestconf);
 		// Store values
 		waterpoints_outerpbomb.push(Array(waterpoints.length));
 		for (let k=0; k<waterpoints.length; k++) {
@@ -313,12 +317,12 @@ function bestguessisland(displayprobs=false) {
 		//console.log("prob of deep ocean is", randomdeepoceanprob, remainingbombs, ndeepoceanpoints);
 		// Only open deep-ocean if much less likely to be bomb. You get less info, so has to be a lot safer.
 		if (randomdeepoceanprob < highestconf*.4) {
-			console.log("OPENING DEEP-OCEAN");
+			//console.log("OPENING DEEP-OCEAN");
 			let founddeep = false;
 			for (let i=0; i<nrow; i++) {
 				for (let j=0; j<ncol; j++) {
 					if (visualboard[i][j] == 'u' && waterpointsmaptoindex.get([i, j].toString())===undefined) {
-						console.log("deep ocean cell is", i, j);
+						//console.log("deep ocean cell is", i, j);
 						highestconf = randomdeepoceanprob;
 						highestconfpoint = [i, j];
 						highestconfaction = "click";
@@ -338,7 +342,7 @@ function bestguessisland(displayprobs=false) {
 		document.querySelector("#boardsquare"+highestconfpoint[0]+"_"+highestconfpoint[1]+"").style.backgroundColor="cyan";
 	}
 	
-	console.log("Best island guess:", highestconfaction, highestconfpoint, highestconf);
+	//console.log("Best island guess:", highestconfaction, highestconfpoint, highestconf);
 	AIct.stop("bestguessisland");
 	return {action:highestconfaction,
 		   	point:highestconfpoint,
@@ -371,6 +375,35 @@ function openrandomcell() {
 	return 0;
 }
 
+function AImove1() {
+	// Do exactly one move
+	// Start with guaranteed
+	let n = AImovesguaranteed1iter(maxmoves=1);
+	if (n > 0.5) { 
+		return n;
+	}
+	// Do island guess
+	let guess = bestguessisland();
+	if (guess.success) {
+		n = dobestislandguess(guess);
+		if (n > 0.5) { 
+			return n;
+		}
+	}
+	// Open first open cell
+	n = openrandomcell();
+	return n;
+}
+
+function fullAIoneatatime() {
+	if (true) {
+		let n = AImove1();
+		if (n > .5 && gameisactive) {
+			setTimeout(fullAIoneatatime, 1);
+		}
+	}
+}
+
 function fullAI() {
 	if (sum(isrevealed.flat()) == 0) {square_click(0,0);}
 	let nactions = 0;
@@ -398,3 +431,23 @@ function fullAI() {
 	}
 }
 
+function runAINtimes(N) {
+	console.log("Running AI n times");
+	let nwins = 0;
+	let avgwintime = 0;
+	let fullct = new CodeTimer();
+	for (let i=0; i<N; i++) {
+		console.log("runAINtimes on ", i, "/", N, "won", nwins, "/", i);
+		reset_game();
+		fullct.start('game');
+		fullAI();
+		fullct.stop('game');
+		// Find if won
+		if (sum(isrevealed.flat()) == ncol*nrow - nbombs) {
+			avgwintime = (avgwintime*nwins + fullct.sections.game.lasttime) / (nwins+1);
+			nwins+=1;
+		}
+		
+	}
+	console.log("AI won", nwins, "/", N, ", ", (100*nwins/N).toFixed(2), "%, avg win time", avgwintime.toFixed(1));
+}

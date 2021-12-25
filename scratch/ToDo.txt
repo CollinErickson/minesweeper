@@ -2,27 +2,16 @@ get display to update
 
 do single shore for archipelago, not all
 
-only add points to archipelago if they touch opened. Only touching flag shouldn't get added. 1 f and nothing else gives error.
-
-Winning isn't always correct. Double check count somewhere?
-
-Track time spent in each part
-
 LP with min/max or each water cell. Obj is min xmax - xmin
 
 Add info about AI on page, keyboard shortcuts
 
-Add AI output to explain what it did
-
-Write code to play n games, tracking if won. Track time won.
+Add AI output to explain what it did. Count # of moves by method and risk.
 
 Don't redraw whole board? Only cells that changed
 
 Do all archipelagos at once? Makes sense if allowed to jump away when prob of bomb is high
 
-AI only 1 move
+Option for AI assist always after user moves
 
-Option for AI assist on user moves
-
-Timer: max time
-
+Track wins/losses during session

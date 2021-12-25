@@ -126,7 +126,7 @@ function square_click(i, j, ev=null, dontshow=false) {
 	}
 	
 	input_move();
-	return;
+	return nopened;
 }
 
 function mark_bomb(i, j, ev=null) {
@@ -268,15 +268,23 @@ function game_won() {
 }
 
 document.addEventListener('keydown', function (event) {
-	if (event.key === 'n') {
+	// New game
+	if (event.key === 'n' || event.key === 'r') {
 		reset_game();
 	}
+	// Assist, does all guaranteed moves
 	if (event.key === 'a') {
-		AImove1();
+		AImovesguaranteed();
 	}
+	// Full run AI
 	if (event.key === 'f') {
 		fullAI();
 	}
+	// AI do one move
+	if (event.key === 'o') {
+		AImove1();
+	}
+	// Show probabilities
 	if (event.key === 'p') {
 		bestguessisland(true);
 	}
