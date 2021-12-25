@@ -15,3 +15,5 @@ Do all archipelagos at once? Makes sense if allowed to jump away when prob of bo
 Option for AI assist always after user moves
 
 Track wins/losses during session
+
+fullAI: turn off display until end

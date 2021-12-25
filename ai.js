@@ -15,6 +15,7 @@ function AImovesguaranteed() {
 	return ns;
 }
 function AImovesguaranteed1iter(maxmoves=1e9) {
+	//console.log("max moves is", maxmoves);
 	// use visualboard[i][j].
 	// 'f' is flagged, 'u' is unopened, number is num open
 	if (!gameisactive) {return 0;}
@@ -31,24 +32,41 @@ function AImovesguaranteed1iter(maxmoves=1e9) {
 				let ncellssurround = si.length;
 				// Only flags left to place
 				if (nunopenedsurround > 0 && nopennumberssurround + visualboard[i][j] == ncellssurround) {
-					//console.log("could place flags around", i, j);
+					//console.log("could place flags around", i, j, si, nmovesmade, maxmoves);
 					//si.forEach(x => {if (visualboard[x[0]][x[1]] == 'u') {nmovesmade += 1; mark_bomb(x[0], x[1]); if (nmovesmade>=maxmoves) {return nmovesmade;}}});
-					for (x in si) {
-						if (visualboard[x[0]][x[1]] == 'u') {nmovesmade += 1; mark_bomb(x[0], x[1]); if (nmovesmade>=maxmoves) {return nmovesmade;}}
+					for (let k=0; k<si.length; k++) {
+						let x = si[k];
+						//console.log("add flag, x is", x, visualboard[x[0]][x[1]]);
+						if (visualboard[x[0]][x[1]] == 'u') {
+							nmovesmade += 1;
+							mark_bomb(x[0], x[1]);
+							if (nmovesmade>=maxmoves) {
+								//console.log("leaving 1iter flag", nmovesmade, maxmoves);
+								return nmovesmade;
+							}
+						}
 					}
 				}
 				// Only cells to open
 				if (nunopenedsurround > 0 && visualboard[i][j] == nflagssurround) {
 					//console.log("could open cells around", i, j);
 					//si.forEach(x => {if (visualboard[x[0]][x[1]] == 'u') {nmovesmade += 1; square_click(x[0], x[1]); if (nmovesmade>=maxmoves) {return nmovesmade;}}});
-					for (x in si) {
-						if (visualboard[x[0]][x[1]] == 'u') {nmovesmade += 1; square_click(x[0], x[1]); if (nmovesmade>=maxmoves) {return nmovesmade;}}
+					for (let k=0; k<si.length; k++) {
+						let x = si[k];
+						if (visualboard[x[0]][x[1]] == 'u') {
+							nmovesmade += 1;
+							square_click(x[0], x[1]);
+							if (nmovesmade>=maxmoves) {
+								//console.log("leaving 1iter open", nmovesmade, maxmoves);
+								return nmovesmade;
+							}
+						}
 					}
 				}
 			}
 		}
 	}
-	//console.log('nmovesmade was', nmovesmade);
+	//console.log('nmovesmade was in AImovesguaranteed1iter', nmovesmade);
 	return nmovesmade;
 }
 function sum(arr) {
@@ -405,6 +423,7 @@ function fullAIoneatatime() {
 }
 
 function fullAI() {
+	update_display_board = false;
 	if (sum(isrevealed.flat()) == 0) {square_click(0,0);}
 	let nactions = 0;
 	while (nactions < 150) {
@@ -429,6 +448,8 @@ function fullAI() {
 			break;
 		}
 	}
+	update_display_board = true;
+	display_board(board);
 }
 
 function runAINtimes(N) {

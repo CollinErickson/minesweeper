@@ -46,10 +46,13 @@ function convert_board_to_HTML(board) {
 	out += "</table>";
 	return out;
 }
-	
+
+let update_display_board = true;
 function display_board(board) {
 	//console.log("Updating board");
-	document.getElementById("divboard").innerHTML = convert_board_to_HTML(board);
+	if (update_display_board) {
+		document.getElementById("divboard").innerHTML = convert_board_to_HTML(board);
+	}
 	//window.requestAnimationFrame(function(){});
 	return;
 }
@@ -279,6 +282,10 @@ document.addEventListener('keydown', function (event) {
 	// Full run AI
 	if (event.key === 'f') {
 		fullAI();
+	}
+	// Full run AI visually
+	if (event.key === 's') {
+		fullAIoneatatime();
 	}
 	// AI do one move
 	if (event.key === 'o') {
