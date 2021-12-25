@@ -1,9 +1,3 @@
-num revealed around each square, num flagged
-
-revealedborderboxes
-
-get points of island. get boxes on border, opened/unopened.
-
 get display to update
 
 do single shore for archipelago, not all
@@ -20,8 +14,6 @@ Add info about AI on page, keyboard shortcuts
 
 Add AI output to explain what it did
 
-Pick random if no choice is better than a random untouched one
-
 Write code to play n games, tracking if won. Track time won.
 
 Don't redraw whole board? Only cells that changed
@@ -30,4 +22,7 @@ Do all archipelagos at once? Makes sense if allowed to jump away when prob of bo
 
 AI only 1 move
 
-Show probs: highlight cell it would act on
+Option for AI assist on user moves
+
+Timer: max time
+

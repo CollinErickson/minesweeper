@@ -83,6 +83,11 @@ function square_click(i, j, ev=null, dontshow=false) {
 	}
 	//console.log("clicked on square", i, j);
 	
+	// If already opened or has a flag, exit
+	if (isrevealed[i][j] || isflagged[i][j]) {
+		return;
+	}
+	
 	// Start timer if first move
 	if (stopwatchisstopped) {
 		timer.start();
@@ -136,7 +141,7 @@ function mark_bomb(i, j, ev=null) {
 		visualboard[i][j] = 'f'; // flagged
 		flagsplaced += 1;
 	}
-	document.getElementById('flagsleft').innerText = nbombs - flagsplaced;
+	document.getElementById('flagsleft').innerHTML = (nbombs - flagsplaced); // "&#9873;" + 
 	input_move();
 }
 
@@ -216,7 +221,7 @@ function reset_game() {
 	}
 	flagsplaced = 0;
 	nopened = 0;
-	document.getElementById('flagsleft').innerText = nbombs - flagsplaced;
+	document.getElementById('flagsleft').innerHTML = (nbombs - flagsplaced); //"&#9873;" + 
 	
 	// update board
 	display_board(board);

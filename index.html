@@ -30,13 +30,20 @@
 			<div id="options">
 				<table>
 					<tr><td>
-						<div id ='stopwatch' class='stopwatch' onclick='click_stopwatch()'>
-							Stopwatch /
-						</div>
+						<table style='font-size:20px;'>
+							<tr><td>&#9201;</td><td>
+								<div id ='stopwatch' class='stopwatch' onclick='click_stopwatch()'>
+									Stopwatch /
+								</div>
+							</td></tr>
+							<tr><td>&#9873;</td><td>
+								<div id='flagsleft'></div>
+							</td></tr>
+						</table>
 					</td></tr>
-					<tr><td>
-						<div id='flagsleft'></div>
-					</td></tr>
+					<!--<tr><td>
+						<div id='flagsleft'>&#9873;</div>
+					</td></tr>-->
 					<tr><td>
 						<input class="favorite styled" type="button" value="New game" onclick="reset_game()">
 					</td></tr>

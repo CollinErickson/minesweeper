@@ -168,6 +168,10 @@ function bestguessisland(displayprobs=false) {
 			pointsalreadyvisited.set(p.toString(), true); //pneighbors);
 		}
 	}
+	let waterpointsmaptoindex = new Map();
+	for (let k=0; k<waterpoints.length; k++) {
+		waterpointsmaptoindex.set(waterpoints[k].toString(), k);
+	}
 	
 	if (waterpoints.length == 0 || islandbordernumberpoints.length == 0) {
 		console.log("Error in bestguessisland: no waterpoints or border points", waterpoints, islandbordernumberpoints);
@@ -180,17 +184,20 @@ function bestguessisland(displayprobs=false) {
 	// Outer loop: restart same process, check stability of numbers
 	let nouter = 5;
 	let waterpoints_outerpbomb = [];
-		let pbombmap = new Map();
 	for (let iouter=0; iouter < nouter; iouter++) {
 		// Loop over random samples, update probabilities as you go
 		let nvalid = 0;
 		let nattempts = 0;
+		let pbombmap = new Map();
 		let pbombeps0 = .05;
 		let pbombeps = pbombeps0;
 		let highestconf = 1;
 		waterpoints.forEach(x => pbombmap.set(x.toString(), 0.3));
-		while (nvalid < 100 && nattempts < 100 && (nattempts<50 || highestconf > 0.05)) {
-			//console.log("on attempt", nattempts, nvalid, pbomb);
+		let maxabspdiff = 1;
+		let prevpbombmapasarray = Array.from(pbombmap.values());
+		// Break after reaching max iter, or once probs aren't changing
+		while (nvalid < 100 && nattempts < 100 && (nattempts<50 || highestconf > 0.05) && maxabspdiff>.01) {
+			//console.log("on attempt", nattempts, nvalid, highestconf, maxabspdiff);
 			nattempts += 1;
 			// Randomly assign bombs to the water
 			// Put them in a hashmap
@@ -238,13 +245,19 @@ function bestguessisland(displayprobs=false) {
 			} else if (numlowexacthigh[0] < numlowexacthigh[2]) {
 				//pbomb -= .05;
 			}
+			// Track max change in pbomb, exit early if no change
+			let pbombmapasarray = Array.from(pbombmap.values());
+			maxabspdiff = 0;
+			for (let k=0; k<pbombmapasarray.length; k++) {
+				maxabspdiff = Math.max(maxabspdiff, Math.abs(pbombmapasarray[k] - prevpbombmapasarray[k]));
+			}					   
+			prevpbombmapasarray = pbombmapasarray;
+			// Store highest confidence of any action
 			highestconf = Math.min(Math.min(...Array.from(pbombmap.values())), 1-Math.max(...Array.from(pbombmap.values())));
+			// Decrease step size
 			pbombeps *= .99;
 		}
 		console.log("exited while loop", nvalid, nattempts, highestconf);
-		if (displayprobs) {
-			waterpoints.forEach(x => {document.querySelector("#boardsquare"+x[0]+"_"+x[1]+" div").innerText = pbombmap.get(x.toString()).toFixed(2)});
-		}
 		// Store values
 		waterpoints_outerpbomb.push(Array(waterpoints.length));
 		for (let k=0; k<waterpoints.length; k++) {
@@ -261,6 +274,14 @@ function bestguessisland(displayprobs=false) {
 		waterpoints_outerpbombavg[k] /= nouter;
 	 }
 	//console.log("waterpoints_outerpbombavg is", waterpoints_outerpbombavg);
+	
+	// Display probabilities
+	if (displayprobs) {
+		//waterpoints.forEach(x => {document.querySelector("#boardsquare"+x[0]+"_"+x[1]+" div").innerText = pbombmap.get(x.toString()).toFixed(2)});
+		for (let k=0; k<waterpoints.length; k++) {
+			document.querySelector("#boardsquare"+waterpoints[k][0]+"_"+waterpoints[k][1]+" div").innerText = waterpoints_outerpbombavg[k].toFixed(2);
+		}
+	}
 	
 	// Find move it has the highest confidence in
 	highestconf = 2;
@@ -296,7 +317,7 @@ function bestguessisland(displayprobs=false) {
 			let founddeep = false;
 			for (let i=0; i<nrow; i++) {
 				for (let j=0; j<ncol; j++) {
-					if (visualboard[i][j] == 'u' && pbombmap.get([i, j].toString())===undefined) {
+					if (visualboard[i][j] == 'u' && waterpointsmaptoindex.get([i, j].toString())===undefined) {
 						console.log("deep ocean cell is", i, j);
 						highestconf = randomdeepoceanprob;
 						highestconfpoint = [i, j];
@@ -310,6 +331,11 @@ function bestguessisland(displayprobs=false) {
 				}
 			}
 		}
+	}
+	
+	// Highlight cell AI would click next
+	if (displayprobs) {
+		document.querySelector("#boardsquare"+highestconfpoint[0]+"_"+highestconfpoint[1]+"").style.backgroundColor="cyan";
 	}
 	
 	console.log("Best island guess:", highestconfaction, highestconfpoint, highestconf);
