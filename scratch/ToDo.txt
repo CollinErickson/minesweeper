@@ -27,3 +27,7 @@ Write code to play n games, tracking if won. Track time won.
 Don't redraw whole board? Only cells that changed
 
 Do all archipelagos at once? Makes sense if allowed to jump away when prob of bomb is high
+
+AI only 1 move
+
+Show probs: highlight cell it would act on

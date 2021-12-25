@@ -65,8 +65,8 @@ function surrounding_indices(i,j) {
 	}
 	return out;
 }
+/*
 function get_ncellssurround(i,j) {
-	
 	let out = 0;
 	for (let di=-1; di<1.5; di++) {
 		for (let dj=-1; dj<1.5; dj++) {
@@ -83,6 +83,7 @@ function mmm() {
 	
 	let reg = /121uuu/;
 }
+*/
 function bestguessisland(displayprobs=false) {
 	if (!displayprobs) {if (!gameisactive) {return {success:false};}}
 	AIct.start("bestguessisland");
@@ -251,6 +252,7 @@ function bestguessisland(displayprobs=false) {
 		}
 	}
 	//console.log("waterpoints_outerpbomb is", waterpoints_outerpbomb);
+	// Average over outer loop to get best guess of probs
 	let waterpoints_outerpbombavg = Array(waterpoints.length).fill(0);
 	for (let k=0; k<waterpoints.length; k++) {
 		for (let iouter=0; iouter<nouter; iouter++) {
@@ -260,23 +262,56 @@ function bestguessisland(displayprobs=false) {
 	 }
 	//console.log("waterpoints_outerpbombavg is", waterpoints_outerpbombavg);
 	
+	// Find move it has the highest confidence in
 	highestconf = 2;
 	let highestconfpoint = null;
 	let highestconfaction = null;
 	// Loop over water points
 	for (let k=0; k<waterpoints.length; k++) {
 		let pk = waterpoints_outerpbombavg[k]; //pbombmap.get(waterpoints[k].toString()); 
+		// Least likely to be bombs: open
 		if (pk < highestconf) {
 			highestconf = pk;
 			highestconfpoint = waterpoints[k];
 			highestconfaction = "click";
 		}
-		if (1 - pk < highestconf) {
+		// Most likely to be bombs: flag
+		// Bias it away from flags since clicks provide more info (reason for *.8)
+		if (1 - pk < highestconf * .8) {
 			highestconf = 1 - pk;
 			highestconfpoint = waterpoints[k];
 			highestconfaction = "flag";
 		}
 	}
+	
+	// Find prob for opening a random deep-ocean cell. Never flag deep ocean, that'd be bad.
+	let remainingbombs = nbombs - sum(waterpoints_outerpbombavg) - sum(isflagged.flat());
+	let ndeepoceanpoints = sum(visualboard.flat().map(x => x=='u')) - waterpoints.length;
+	if (ndeepoceanpoints > 0.5) { // Needs to be a deep ocean point left
+		let randomdeepoceanprob = Math.max(0, Math.min(1, remainingbombs / ndeepoceanpoints));
+		//console.log("prob of deep ocean is", randomdeepoceanprob, remainingbombs, ndeepoceanpoints);
+		// Only open deep-ocean if much less likely to be bomb. You get less info, so has to be a lot safer.
+		if (randomdeepoceanprob < highestconf*.4) {
+			console.log("OPENING DEEP-OCEAN");
+			let founddeep = false;
+			for (let i=0; i<nrow; i++) {
+				for (let j=0; j<ncol; j++) {
+					if (visualboard[i][j] == 'u' && pbombmap.get([i, j].toString())===undefined) {
+						console.log("deep ocean cell is", i, j);
+						highestconf = randomdeepoceanprob;
+						highestconfpoint = [i, j];
+						highestconfaction = "click";
+						founddeep = true;
+						break;
+					}
+				}
+				if (founddeep) {
+					break;
+				}
+			}
+		}
+	}
+	
 	console.log("Best island guess:", highestconfaction, highestconfpoint, highestconf);
 	AIct.stop("bestguessisland");
 	return {action:highestconfaction,
