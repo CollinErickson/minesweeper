@@ -17,3 +17,7 @@ Option for AI assist always after user moves
 Track wins/losses during session
 
 fullAI: turn off display until end
+
+favicon
+
+retitle

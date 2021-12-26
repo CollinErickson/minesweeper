@@ -62,6 +62,11 @@ function input_move(move) {
 	// update board
 	display_board(board);
 	
+	// If AI assist, run AI guaranteed
+	if (document.getElementById('checkboxAIassist').checked) {
+		AImovesguaranteed();
+	}
+	
 	// Check game over
 	//let game_over = check_game_over();
 	//if (game_over > 0) {
@@ -146,6 +151,7 @@ function mark_bomb(i, j, ev=null) {
 	}
 	document.getElementById('flagsleft').innerHTML = (nbombs - flagsplaced); // "&#9873;" + 
 	input_move();
+	return flagsplaced;
 }
 
 
