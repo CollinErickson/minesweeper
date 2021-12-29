@@ -136,7 +136,7 @@ function bestguessisland(displayprobs=false) {
 		}
 	}
 	if (!foundstart) {
-		console.log("bestguessisland failed to find starting point, no cells opened?");
+		//console.log("bestguessisland failed to find starting point, no cells opened?");
 		return {success:false};
 	}
 	//let islandpoints = [];

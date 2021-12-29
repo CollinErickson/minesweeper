@@ -1,5 +1,3 @@
-get display to update
-
 do single shore for archipelago, not all
 
 LP with min/max or each water cell. Obj is min xmax - xmin
@@ -16,8 +14,10 @@ Option for AI assist always after user moves
 
 Track wins/losses during session
 
-fullAI: turn off display until end
+retitle, subtitle with AI
 
-favicon
+README
 
-retitle
+Find experts to compare to
+
+Button widths
